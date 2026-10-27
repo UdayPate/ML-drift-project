@@ -14,6 +14,7 @@ Format: `YYYY-MM-DD | Decision | Why`
 2026-10-26 | Use a tutor-first, one-step-at-a-time coding-agent workflow | Each implementation step should be explained, tested, and understood before proceeding.
 2026-10-26 | Human student alone controls Git commits | The agent must never stage by default or commit, push, or rewrite history.
 2026-10-26 | Keep the GitHub repository public | Team choice; course work is shared openly.
+2026-10-27 | Use Moment B: predict subscription immediately before a planned marketing call begins | Defines the prediction time so only information available before the call can be used. Current call duration and outcome are unavailable. This does not automatically approve ambiguous features.
 
 <!-- Add confirmed decisions below, one per line. Do not add proposals as decisions. -->
 
@@ -35,3 +36,5 @@ Open questions. Do not treat any of these as decided. When one is resolved, dele
 - Whether reconstructed year-month labels may be used for EDA/labelling (windows stay row-index based)
 - How notebooks import code from `src/` (`sys.path` line, `PYTHONPATH`, or editable install)
 - Whether to add `pytest` to `requirements.txt` when introducing tests
+- Whether campaign, contact, month and day_of_week were known before the modeled call (is a row one call or a whole campaign? planned vs. actual values)
+- When each economic indicator's value was publicly available relative to call dates (documentation gives measurement frequency only, no publication dates or delays)

@@ -74,6 +74,37 @@ After each completed step, the coding agent fills in the factual fields. I fill 
 
 ---
 
+## Entry 4 — Step 1.6: leakage review of features other than `duration` (awaiting student review)
+**Date:** 2026-10-27
+**Step:** Step 1.6 in `PROGRESS.md`. Not ticked until the student reviews it.
+**What was built:** `notebooks/02_leakage_review.ipynb`. It quotes the official UCI documentation (`bank-additional-names.txt`) for each of the 19 inputs other than `duration`, runs descriptive checks, and ends with a provisional feature-by-feature table. No model, no data split, and no change to the data.
+**Concept behind it (tutor notes):**
+- *Data leakage:* training on information that would not exist at prediction time. *Hard leakage* = recorded after or because of the outcome; *timing leakage* = real but not yet recorded or published when needed.
+- *The prediction moment matters.* Moment A (before any contact is scheduled) allows only customer, history and market information. Moment B (just before a planned call) also allows the planned channel and date and the number of earlier calls in this campaign. Moment B is the working assumption but is **not yet confirmed or logged as a decision**.
+- *Frequency is not availability.* "Quarterly indicator" says how often a series is measured, not when each value was published.
+- *Correlation with the target is not proof of leakage.* A feature can predict well legitimately; the question is only whether it was known in time.
+**Validation/results:**
+- Documentation source: official UCI archive; its `bank-additional-full.csv` has the same SHA-256 as `data/raw/bank-additional-full.csv`. All 19 quoted definitions were checked verbatim against the names file.
+- Notebook run from `notebooks/` in a fresh kernel with `jupyter nbconvert --execute --inplace`: 11 of 11 code cells ran, 0 errors.
+- `pdays`/`previous`/`poutcome`: consistent apart from 4,110 rows with `previous > 0` but `pdays = 999` (all `poutcome = failure`), which contradicts the documentation's meaning of 999. This is an encoding question, not leakage.
+- `campaign`: min 1, max 56. The check "count(k) <= count(k-1)" fails for 10 values of k, so the rows are not a complete log of every call. This does not prove `campaign` is a final total. A customer-matching test gave results no different from shuffled labels, so it was dropped as uninformative. Verdict: **cannot be settled** from the documentation and data.
+- Economic features: 10, 26, 26, 316 and 11 distinct values (`emp.var.rate`, `cons.price.idx`, `cons.conf.idx`, `euribor3m`, `nr.employed`). The two quarterly series change value at Mar/Jun/Sep/Dec in the observed data, not at calendar-quarter starts; the monthly series change at month boundaries. Publication dates are not documented, so availability is **uncertain**.
+- Provisional table: 10 features "include (provisional)" (7 customer attributes, `pdays`, `previous`, `poutcome`); 9 "investigate further" (`contact`, `month`, `day_of_week`, `campaign`, and the 5 economic indicators).
+**Limits:** the original paper (Moro et al., 2014) was not retrieved, so it may answer the open questions. External release calendars were not consulted. There is no customer ID, so rows cannot be linked to a customer.
+**My explanation (student to fill in):**
+**What I'm still unsure about (student to fill in):**
+**Recall question:** Why does a quarterly economic indicator being available every quarter not prove it was known on the day of a call?
+**Next proposed step:** Student review of Step 1.6 and confirmation of the prediction moment. Then Step 1.7 (one-paragraph EDA summary), unless the student prefers to resolve the open questions first.
+
+**Addendum (2026-10-27) — documentation update after the student's review:**
+- *Decision recorded:* the student confirmed **Moment B** (predict immediately before a planned call begins); it is logged in `DECISIONS.md`. It defines the prediction time only and does **not** approve ambiguous features. Two new pending items were logged: whether `campaign`, `contact`, `month`, `day_of_week` were known before the modeled call, and when each economic indicator was publicly available.
+- *Six groups documented in the notebook:* (1) customer attributes, provisionally available; (2) previous campaign history, provisionally available subject to verifying its historical meaning, with the 4,110 `previous > 0` / `pdays = 999` rows kept as a documented interpretation issue; (3) current contact information (`campaign`, `contact`, `month`, `day_of_week`), unresolved; (4) the five economic indicators, unresolved; (5) `duration`, excluded; (6) `row_order` and reconstructed `period`, analysis metadata only, not predictive inputs.
+- *Concept — conservative vs. broader baseline:* a conservative baseline uses only groups 1-2 (10 features), so "no timing leakage" is easy to defend but predictions may be weaker (not measured). A broader baseline adds groups 3-4 (9 more features) and may predict better, but any feature that was not truly known in time would inflate scores invisibly. Because the economic indicators drift most, this choice also changes what the drift experiment tests. The choice has **not** been made; it belongs to the student. A with/without comparison can show how much results depend on a group, but cannot prove whether its features were known in time.
+- *Validation:* `02_leakage_review.ipynb` re-run from `notebooks/` in a fresh kernel: 12 of 12 code cells ran, 0 errors. The new check cell confirmed that groups 1-4 cover exactly the 19 reviewed inputs with no overlap (7 + 3 + 4 + 5), and that `row_order` and `period` are absent from the raw CSV. All 19 documentation quotes and the new "substantial improvement" quote were re-checked verbatim against the official names file. The dataset SHA-256 is unchanged. No model was trained and no split was chosen.
+- *Status:* Step 1.6 is still unticked in `PROGRESS.md`, awaiting the student's approval.
+
+---
+
 <!-- Copy this block after each completed step. -->
 ## Entry N — [Step title]
 **Date:** YYYY-MM-DD
