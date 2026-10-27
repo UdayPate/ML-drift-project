@@ -11,3 +11,6 @@ scipy==1.18.1
 jupyter==1.1.1
 nbconvert==7.17.2
 ipykernel==7.4.0
+
+# --- Project code dependencies (imported by src/); installed and checked with `pip check` on 2026-10-27 ---
+scikit-learn==1.9.1

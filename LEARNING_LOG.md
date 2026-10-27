@@ -125,6 +125,55 @@ After each completed step, the coding agent fills in the factual fields. I fill 
 
 ---
 
+## Entry 6 — Phase A: shared data loading, chronological split, and leakage-safe preprocessing (awaiting student review)
+**Date:** 2026-10-27
+**Step:** Shared setup for Person 2's baseline. Touches the intent of Steps 2.1, 2.2, 2.5 and part of 2.6 in `PROGRESS.md`; no checkbox ticked. No model has been trained.
+**What was built:** `src/settings.py` (seed 42, paths, 60/20/20 fractions, the 10-feature baseline list, the `pdays` sentinel), `src/data.py` (`load_dataset`, `chronological_split`, `encode_target`), `src/features.py` (`select_baseline_features`, `add_pdays_features`, `build_preprocessor`), `tests/test_phase_a.py` (11 `unittest` tests), and `scikit-learn==1.9.1` in `requirements.txt`. Six decisions were logged in `DECISIONS.md`, and four resolved items were removed from Pending.
+**Concept behind it (tutor notes):**
+- *Leakage-safe preprocessing:* scalers, imputers and encoders learn numbers (means, medians, category lists). If they learn them from development or stream rows, information from the future leaks into training. A scikit-learn `Pipeline` with a `ColumnTransformer` keeps all of that in one object: call `.fit()` on training rows only, then `.transform()` the other rows.
+- *Sentinel value:* `pdays = 999` is a code, not 999 days. Treating it as a number would make "never contacted" look like "a very long time ago". We keep an indicator `pdays_is_999` and the real value elsewhere. Because 4,110 rows have `previous > 0` with `pdays = 999`, we do not claim 999 always means "never contacted".
+- *Chronological split:* train on the earlier 60% of rows, evaluate on the next 20% (development), keep the last 20% (stream) untouched. No shuffling, because shuffling would let the model see the future.
+- *Test the test:* a passing test only means something if it can fail. A scratch mutation check (fitting the preprocessing on all rows, or on corrupted dev rows) changed the learned parameters, so the independence tests would catch that mistake.
+**Validation/results:**
+- scikit-learn 1.9.1 installed into the existing venv; `pip check` reports no broken requirements; imports succeed with warnings treated as errors.
+- 11 of 11 tests pass with `python -W error -m unittest discover -s tests -v` (no warnings), and also with `python -m unittest tests.test_phase_a` (works without `tests/__init__.py`).
+- Verified: 41,188 rows in original order (compared with the `csv` module); split boundaries 24,712 / 8,238 / 8,238, contiguous, no shuffling, and the three parts concatenate back to the original; exactly the 10 baseline features selected, with `duration`, `campaign`, `contact`, `month`, `day_of_week` and the five economic features absent; `"unknown"` kept as its own category (0 missing values); `pdays_is_999` equals `(pdays == 999)`, no 999 remains in `pdays_days`, and all 4,110 inconsistent rows are kept; preprocessing statistics equal the training rows' statistics (train-only age mean 40.182 vs 40.024 on all rows); corrupting every feature and label after the training rows leaves the fitted parameters identical.
+- Import check from `notebooks/` with `sys.path.insert(0, '..')` worked. Notebooks and the dataset (SHA-256 unchanged) were not modified.
+**Finding to discuss (not yet decided):** only 6 of 24,712 training rows have a real `pdays` value (3, 4, 4, 4, 5, 6), and `previous` never exceeds 1 in training (max 3 in development). So the median used to fill `pdays_days` comes from 6 rows, and after scaling the column has a standard deviation of 0.0156. The 168 development rows (2.0%) with a real `pdays` get scaled values from about -257 to +513, and `previous` reaches about 41. This is not a bug: the early rows simply contain almost no previously contacted customers, which is itself a form of change over time. It may make a Logistic Regression numerically fragile on those rows, so the handling of `pdays_days` and `previous` needs a decision before the baseline is trained.
+**Resolved (same day):** the student chose Option B: `pdays_days` and `previous` are no longer standardised (`pdays_days` stays median-imputed from training rows, `pdays_is_999` stays a separate indicator, `age` is still scaled, categoricals still one-hot encoded). The change is documented in `src/features.py` and `DECISIONS.md`; a new test checks that those two columns are unscaled and that no transformed `pdays_days` value exceeds 27. The Phase A suite then had 12 tests, all passing.
+**Limits:** results here describe the preprocessing only. No performance has been measured. The development rows' features were inspected for this finding; their labels were not used for any choice.
+**My explanation (student to fill in):**
+**What I'm still unsure about (student to fill in):**
+**Recall question:** Why is it a problem if a scaler is fitted on all rows before the split, even though no labels are used?
+**Next proposed step:** Student decision on the `pdays_days` / `previous` scaling issue, then Phase B (one untuned Logistic Regression and its development-set evaluation), proposed but not started.
+
+---
+
+## Entry 7 — Phase B: initial Logistic Regression baseline, development-set evaluation (awaiting student review)
+**Date:** 2026-10-27
+**Step:** First model result for Person 2's task. No `PROGRESS.md` checkbox ticked. Stream rows not used.
+**What was built:** `src/metrics.py` (`evaluate_binary`), `tests/test_metrics.py` (5 hand-computed checks), `DECISION_THRESHOLD = 0.5` and `LOGREG_MAX_ITER = 1000` in `src/settings.py`, and `notebooks/03_baseline_logreg.ipynb`, which saves `figures/07_baseline_confusion_matrix.png`. One untuned Logistic Regression (library defaults, no class weights, no tuning) inside a single Pipeline with the Phase A preprocessing, fitted on the first 24,712 rows and evaluated on the next 8,238 (development) rows, using the 10 conservative features.
+**Concept behind it (tutor notes):**
+- *PR-AUC and its reference:* PR-AUC summarises precision against recall over all thresholds. A model that ranks at random scores a PR-AUC equal to the positive rate, so PR-AUC is only meaningful next to that reference.
+- *Ranking vs. threshold:* PR-AUC and ROC-AUC measure how well rows are ordered. Precision, recall, F1 and the confusion matrix also depend on a cut-off. A model can order rows somewhat better than random and still never cross 0.5 if its probabilities stay low.
+- *Base rate:* Logistic Regression's probabilities reflect the positive rate it was trained on. Training rate 4.81% vs. development rate 11.07% pulls all probabilities down on development rows.
+- *In-sample vs. out-of-sample:* scores on training rows only show the model learned something from rows it has seen; they say nothing about new data.
+**Validation/results (actual values; all from the executed notebook):**
+- Development rows: 8,238; yes 912; positive rate 11.07% (random-ranking PR-AUC reference 0.1107).
+- PR-AUC 0.1726 (1.56x the reference); ROC-AUC 0.5819.
+- At threshold 0.5: **0 of 8,238 rows predicted yes**, so precision 0, recall 0, F1 0 (precision is reported as 0 by scikit-learn's `zero_division=0`). Confusion matrix: TN 7,326, FP 0, FN 912, TP 0. Highest predicted probability on development rows: 0.425.
+- In-sample (training) check only: PR-AUC 0.0577 vs. reference 0.0481, ROC-AUC 0.5534. Mean predicted probability: 0.0481 on train, 0.0496 on development, against actual rates 4.81% and 11.07%.
+- Cross-checks: all reported metrics matched direct scikit-learn calls and formulas from the confusion counts, and the probabilities matched the sigmoid of the decision function. A separate script using only raw pandas and scikit-learn (no `src/` code) reproduced PR-AUC 0.172592, ROC-AUC 0.581872, the confusion matrix and the maximum score. 17 of 17 unit tests pass with warnings treated as errors; notebook ran 10 of 10 code cells with no errors or warnings. Notebooks 01 and 02 and the dataset were unchanged.
+- A mistake in my own check was caught on the first run: the hand-written F1 formula divided by zero when precision and recall were both 0. The formula was fixed to return 0 in that case; no model setting was changed.
+**Investigation (descriptive, nothing re-tuned):** in the training rows 99.47% have `poutcome = nonexistent`, only 130 rows (0.53%) have `previous > 0` and 6 have a real `pdays`; in the development rows 26.04% have `previous > 0` and 168 have a real `pdays`. So the history features barely vary where the model learns, and the 10-feature model separates yes from no only weakly even in-sample (ROC-AUC 0.553). These are hypotheses about why the baseline is weak, not proven causes.
+**Limits:** one split, one untuned model, one fixed 0.5 threshold; development-set results only, not final performance, and nothing yet about retraining strategies. The `pdays_days` coefficient rests on 6 real training observations. Coefficients are associations in this fitted model, not causal effects.
+**My explanation (student to fill in):**
+**What I'm still unsure about (student to fill in):**
+**Recall question:** How can a model have a PR-AUC above the random-ranking reference and still predict zero positives at a 0.5 threshold?
+**Next proposed step:** Student review of the baseline. Any change to the threshold, features, class weighting or model settings needs an explicit decision; not started.
+
+---
+
 <!-- Copy this block after each completed step. -->
 ## Entry N — [Step title]
 **Date:** YYYY-MM-DD
