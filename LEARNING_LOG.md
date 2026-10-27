@@ -105,6 +105,26 @@ After each completed step, the coding agent fills in the factual fields. I fill 
 
 ---
 
+## Entry 5 — Step 1.7: EDA summary (approved and ticked 2026-10-27)
+**Date:** 2026-10-27
+**Step:** Step 1.7 in `PROGRESS.md`. Not ticked until the student reviews it.
+**What was built:** `EDA_SUMMARY.md` at the repository root: one report-ready paragraph, six slide bullets, short method notes, and a table tracing each number to a section of `notebooks/01_EDA.ipynb`. One separately labelled sentence points to `notebooks/02_leakage_review.ipynb` for the Step 1.6 findings. Person 1's notebook was not modified.
+**Concept behind it (tutor notes):**
+- *Summarise only what was measured.* Each statement is tied to a saved output, so a reader can trace it and nobody has to trust a number from memory.
+- *Effect size vs. significance.* With about 41,000 rows the KS p-values print as 0.0 for every tested feature, so the KS statistic (how large the difference is) and PSI carry the information.
+- *PSI depends on method choices.* Many bins for the economic indicators are empty in one of the two periods, so their exact PSI values are sensitive to the small floor applied to bin proportions. "Far above 0.25" is the safe statement.
+- *Shift is not degradation.* A change in the inputs or in the subscription rate motivates the research question but does not show that any model gets worse, or why.
+- *PR-AUC and prevalence.* The random-guessing PR-AUC equals the positive rate. Because the rate differs between early and late rows (5.6% vs. 24.6% on the illustrative cut), PR-AUC values from different windows must be read against their own baselines. No model has been trained yet.
+**Validation/results:** A script compared the summary against the saved outputs of `01_EDA.ipynb` (13 of 13 code cells executed, 0 errors; notebook unchanged vs. `HEAD`): shape, imbalance ratio, NaN count, duplicates, `pdays = 999` share, `default` unknown share, early/late yes rates, and all KS/PSI/mean values in the drift table. The class counts (36,548 / 4,640) were recomputed from the raw file because they appear in the notebook only inside a figure. 39 of 40 checks passed at first; the one failure was a rounding artefact of the check itself (`round(4.685, 2)` gives 4.68 in Python), and the unrounded `euribor3m` early mean is 4.6855, so 4.69 is correct. A separate sensitivity check, outside notebook 01, recomputed PSI with different floors: the economic-indicator values changed substantially and stayed above 0.25 in every variant tried (smallest 1.26); `age` and `campaign` have no empty bins and barely moved. That check is mentioned qualitatively in the summary and not counted as a notebook 01 output.
+**Validation rerun (after the student's review):** the check was corrected to compare against the notebook's displayed value with a rounding tolerance and, separately, against the unrounded raw data (the `euribor3m` check is now two checks, so 41 checks in total). All 41 passed; `01_EDA.ipynb` is unchanged vs. `HEAD` and the dataset SHA-256 is unchanged. A short "Evidence levels" block (observed / possible / not yet measured) was added to `EDA_SUMMARY.md` to keep those three things visibly separate.
+**Limits:** only 7 features were tested for drift, so "customer and campaign features shift little" applies only to `age` and `campaign`. The 70/30 cut is illustrative, not the modeling split. Reconstructed year-month labels were deliberately not used.
+**My explanation (student to fill in):**
+**What I'm still unsure about (student to fill in):**
+**Recall question:** Why can the same model have a different random-guessing PR-AUC baseline in two windows, and what does that mean for comparing its PR-AUC across them?
+**Next proposed step:** Student review of Step 1.7. Not started: anything for Person 2's baseline.
+
+---
+
 <!-- Copy this block after each completed step. -->
 ## Entry N — [Step title]
 **Date:** YYYY-MM-DD

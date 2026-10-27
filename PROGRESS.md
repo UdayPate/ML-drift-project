@@ -19,7 +19,7 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done (student-approved)
 - [ ] 1.4 Timeline: how rows and the positive rate are spread across the row order (see "Checks to run" in `AGENTS.md`)
 - [ ] 1.5 How customer, campaign, and economic features change across the row order
 - [x] 1.6 Leakage review: confirm `duration` is excluded; check every other feature for availability before the call
-- [ ] 1.7 Write a one-paragraph EDA summary for the report
+- [x] 1.7 Write a one-paragraph EDA summary for the report
 
 ## Phase 2 — Shared setup in `src/`
 - [ ] 2.1 Settings module: feature groups, seed, paths (split and window values stay pending until decided)
