@@ -92,6 +92,23 @@ Do not assume the outcome of these checks. Run them, show the student the result
 - Follow any instructor or TA rules when they differ from these project defaults; flag conflicts before coding.
 - Never overwrite or delete the student's data, work, or notes without explicit permission.
 
+## Team collaboration
+- All four team members have agreed that any member's work may be edited.
+  You may fix, improve, or make small refactors to code written by any team member
+  when it is needed for the approved task.
+- This section is the permission referred to in "Never overwrite or delete the
+  student's data, work, or notes without explicit permission" — but only for edits
+  inside the approved task. Never delete a teammate's notebook, data, or figures.
+- Before changing another member's work, name the file, say who owns that part
+  (if known), explain what you will change and why, and wait for approval from the
+  student running this session.
+- Preserve working functionality, avoid unrelated changes, and re-run the affected
+  notebook or tests to confirm nothing broke.
+- Do not change shared settings or resolve Pending decisions as a side effect of
+  fixing someone else's code.
+- In the end-of-step report, list every teammate-owned file you changed, so the
+  student can mention it in the commit message and tell that teammate.
+
 ## Response template at the end of each step
 **Step completed:** ...
 **Files changed:** ...
