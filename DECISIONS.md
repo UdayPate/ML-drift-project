@@ -13,6 +13,7 @@ Format: `YYYY-MM-DD | Decision | Why`
 2026-10-26 | Exclude deep learning, LLM reports, and production deployment infrastructure | Stay aligned with course expectations and timeline.
 2026-10-26 | Use a tutor-first, one-step-at-a-time coding-agent workflow | Each implementation step should be explained, tested, and understood before proceeding.
 2026-10-26 | Human student alone controls Git commits | The agent must never stage by default or commit, push, or rewrite history.
+2026-10-26 | Keep the GitHub repository public | Team choice; course work is shared openly.
 
 <!-- Add confirmed decisions below, one per line. Do not add proposals as decisions. -->
 
@@ -31,3 +32,4 @@ Open questions. Do not treat any of these as decided. When one is resolved, dele
 - How to handle `pdays = 999` ("never contacted before") and the `unknown` category values
 - Which 2–3 models to shortlist after the initial comparison
 - Number of random seeds and the statistical test used to compare strategies
+- Whether reconstructed year-month labels may be used for EDA/labelling (windows stay row-index based)

@@ -11,6 +11,25 @@ Project rules and step order: see `AGENTS.md`, `PROGRESS.md`, and `DECISIONS.md`
    Do not use `bank-full.csv` (older version, no economic features) or `bank-additional.csv` (10% sample).
 4. Load with `pd.read_csv("../data/raw/bank-additional-full.csv", sep=";")` — the file is semicolon-separated.
 
+## Set up the Python environment (WSL / Linux)
+The virtual environment lives on the WSL Linux filesystem, **outside** the repository (faster than `/mnt/c`, and never committed).
+```bash
+python3 -m venv ~/venvs/ml-drift          # Python 3.12
+source ~/venvs/ml-drift/bin/activate      # run this in every new terminal
+pip install -r requirements.txt           # from the repository root
+python -m ipykernel install --user --name python3 --display-name "Python 3"   # one-time: lets Jupyter find this environment
+```
+
+## Run the notebook
+Run notebooks from inside `notebooks/` (the notebook uses `../data/...` and `../figures/...` paths):
+```bash
+source ~/venvs/ml-drift/bin/activate
+cd notebooks
+jupyter nbconvert --to notebook --execute --inplace 01_EDA.ipynb   # run top to bottom, no clicking
+# or interactively: jupyter lab
+```
+The notebook creates `data/processed/` itself and rewrites the six figures in `figures/`.
+
 ## Layout
 ```
 data/raw/        bank-additional-full.csv (local only, ignored by Git)
