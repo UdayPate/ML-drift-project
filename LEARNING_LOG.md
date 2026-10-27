@@ -174,7 +174,54 @@ After each completed step, the coding agent fills in the factual fields. I fill 
 
 ---
 
+## Entry 8 — Presentation outputs: PR curve, baseline summary, experiment design and workflow diagram (awaiting student review)
+**Date:** 2026-10-27
+**Step:** Mid-semester presentation materials for Person 2 (baseline) and Person 3 (experiment design). No `PROGRESS.md` checkbox ticked. No model, feature, preprocessing, threshold or split was changed; the reserved stream rows were not used.
+**What was built:** a precision-recall curve section in `notebooks/03_baseline_logreg.ipynb` (saved as `figures/08_baseline_pr_curve.png`); `BASELINE_SUMMARY.md`; `EXPERIMENT_DESIGN.md` (concept design, four proposed scenarios, three proposed strategies, comparison plan, Mermaid diagram, slide-ready summary); `figures/09_experiment_workflow.png` with its source script `figures/make_experiment_workflow.py`.
+**Concept behind it (tutor notes):**
+- *Reading a precision-recall curve:* each point is a cut-off; moving from strict to lenient raises recall and usually lowers precision. The dashed reference is the precision of random ranking, which equals the positive rate. `scikit-learn`'s `precision_recall_curve` lists points by *decreasing* recall: the first point is recall 1 with precision equal to the positive rate, the last is recall 0 with precision 1.
+- *Average precision is not the trapezoidal area:* average precision is the non-interpolated step sum of precision times each recall increment. The trapezoid rule on the same points gives a slightly different number.
+- *Three kinds of drift:* covariate (inputs change), label/prior (the share of "yes" changes) and concept (the input-to-outcome relationship changes). Our checks so far speak only to the first two, and only descriptively.
+- *KS and PSI:* the KS statistic is an effect size and its p-value only measures detectability; with ~41,000 rows tiny p-values appear for small differences. PSI depends on binning and a floor on bin proportions, and its 0.1/0.25 cut-offs are rules of thumb.
+- *Design labels:* everything not implemented is marked PROPOSED, so a plan is never read as a result.
+**Validation/results:**
+- Notebook 03 re-executed from a fresh kernel: 12 of 12 code cells, 0 errors, no warnings. All 115 lines of previously saved output were unchanged, and `figures/07_baseline_confusion_matrix.png` is pixel-identical to the previous version. Reported metrics unchanged: PR-AUC 0.1726, reference 0.1107, ROC-AUC 0.5819, 0 of 8,238 predicted yes at 0.5, highest predicted probability 0.425.
+- PR curve checks (asserted in the notebook): points ordered by decreasing recall; first point recall 1 with precision equal to the development positive rate; last point recall 0 with precision 1; the largest curve threshold equals the highest development score and is below 0.5; step-sum average precision 0.172592 = `average_precision_score` = reported PR-AUC; trapezoidal area 0.171830 (a different quantity); dashed line at 0.110706.
+- A claim I drafted ("the curve is above the random line at every recall") was checked against the curve and was wrong: 409 of 5,224 points, at recall about 0.94 to 1.0, lie marginally below the line (by at most about 0.002 in precision). The summary was corrected.
+- Another drafted claim ("economic indicators have 10 to 26 distinct values") was wrong because `euribor3m` has 316; corrected to "four of five".
+- 25 document checks compared numbers in `BASELINE_SUMMARY.md` and `EXPERIMENT_DESIGN.md` with the saved outputs of notebooks 01 and 03; all pass (one apparent failure was a parsing slip in the check, re-verified directly). A separate recomputation, labelled as such in the design document, gave KS p-values of about 4.9e-69 (`age`) and 1.7e-61 (`campaign`), with the five economic indicators underflowing to exactly 0.0 in floating point; the notebook's displayed 0.0 is rounding to three decimals.
+- The two figures were viewed after generation. The workflow diagram was redrawn once to fix a legend overlapping the title, labels overlapping connectors, and an arrow that implied the initial model fed only one strategy.
+- 17 of 17 unit tests pass. Notebooks 01 and 02 and the raw data are unchanged.
+**Limits:** the Mermaid diagram has not been rendered locally (no renderer available); it should be checked on GitHub. Everything marked PROPOSED is untested design. One split, one untuned model and one fixed 0.5 threshold support the baseline numbers, and they say nothing about retraining strategies or about drift causing degradation.
+**My explanation (student to fill in):**
+**What I'm still unsure about (student to fill in):**
+**Recall question:** Why is average precision computed with a step sum rather than the trapezoid rule, and which of the two did we compare against?
+**Next proposed step:** Student review of the presentation materials. Not started: window size and label-delay decisions, drift-detection code, scenarios or strategies.
+
+---
+
+## Entry 9 — Mid-semester presentation deck and handoff (awaiting student review)
+**Date:** 2026-10-27
+**Step:** Team presentation for the DATA 245 mid-semester talk. No ML code, experiment, notebook, dataset, threshold, feature set or split was changed; the reserved stream was not used. No `PROGRESS.md` checkbox ticked.
+**What was built:** `DATA245_Midterm_Drift_Presentation.pptx` (16:9, editable; 11 main slides plus 3 optional backup slides in a separate appendix section; speaker notes on every slide), `PRESENTATION_HANDOFF.md` (slide outline, talking points, figure references, speaker notes, timing, editable presenter assignments, likely professor questions and answers), and `presentation/build_deck.js` plus `presentation/package.json` (the source that generates both files; presentation-only dependencies, separate from `requirements.txt`).
+**Concept behind it (tutor notes):**
+- *One idea per slide, story first:* the talk starts from a question anyone can answer, introduces the bank scenario and the trade-off, and only then uses terms such as PR-AUC, KS and PSI.
+- *Three evidence labels:* every claim is tagged or placed as VERIFIED (measured in our notebooks), PRELIMINARY (development-set results) or PROPOSED / HYPOTHESIS (future work, not tested). Schematic pictures (strategy timelines, scenario shapes) are labelled as schematics, not data.
+- *What the baseline does and does not show:* weak ranking (PR-AUC 0.1726 vs. 0.1107) and zero predictions at threshold 0.5 are different facts; neither shows that drift caused the weak result.
+**Validation/results:**
+- Built with PptxGenJS 4.0.1 using a theme, reusable layouts, real title placeholders and sections. The skill's structure validator passed ("All validations PASSED"); the file opens with python-pptx; size 13.333 x 7.5 in (exactly 16:9); 14 slides; every slide has speaker notes.
+- Rendered with LibreOffice 26.2.6 (unpacked without admin rights; fonts: Carlito, a metric-compatible Calibri substitute) to PDF and images, and all 14 slides were inspected. The first render showed 8 slides with real defects (text overlapping, a figure spilling out of its card, a caption on a card edge, orphaned words, an overstated heading); all were fixed and the changed slides re-rendered and re-inspected.
+- Numbers on the slides were checked against the saved outputs of notebooks 01 and 03 and the raw file: 41,188 rows; 4,640 / 36,548 (11.3%); 5.6% / 24.6%; 24,712 / 8,238 rows; PR-AUC 0.1726; reference 0.1107; ROC-AUC 0.5819; 7,326 / 0 / 912 / 0; 0 of 8,238 predicted yes; highest probability 0.425. All match. A wording scan found no claim that a strategy is better, no claim that drift caused the weak result, and no concept-drift claim.
+**Limits:** slide 1 has placeholders for team member names, instructor and date; nothing was invented. Google Slides compatibility was not tested here (only PowerPoint-format structure and a LibreOffice rendering were checked), so fonts and spacing may shift slightly after upload. The deck was not viewed in PowerPoint itself. The handoff file is generated from the same script; editing the deck by hand means editing the handoff by hand.
+**My explanation (student to fill in):**
+**What I'm still unsure about (student to fill in):**
+**Recall question:** Why does the deck label some slides PROPOSED and others PRELIMINARY, and what would have to happen before a PROPOSED item could be called VERIFIED?
+**Next proposed step:** Student and team review of the deck (fill in slide 1 placeholders, rehearse with the speaker notes, re-check slides after uploading to Google Slides). Not started: drift detectors, scenarios or strategies.
+
+---
+
 <!-- Copy this block after each completed step. -->
+
 ## Entry N — [Step title]
 **Date:** YYYY-MM-DD
 **Step:**
