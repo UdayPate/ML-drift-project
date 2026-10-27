@@ -58,6 +58,22 @@ After each completed step, the coding agent fills in the factual fields. I fill 
 
 ---
 
+## Entry 3 — Step 0.2 finished: `src/` and `tests/` folders
+**Date:** 2026-10-26
+**Step:** Step 0.2 (folder layout), completed after the cleanup in Entry 2. Step 0.3 was ticked at the same review.
+**What was built:** Two empty files: `src/__init__.py` and `tests/.gitkeep`. No code was written. Two items were added under Pending decisions in `DECISIONS.md`: how notebooks import code from `src/`, and whether to add `pytest`.
+**Concept behind it (tutor notes):**
+- *Package:* a folder with an `__init__.py` is a regular Python package, so shared code in `src/` can later be imported by notebooks (e.g. `from src.settings import SEED`). That lets settings live in one place instead of being copied into notebooks. Modern Python can import a folder without the file, but it is the standard convention.
+- *`.gitkeep`:* Git tracks files, not folders, so an empty folder disappears from a fresh clone. An empty placeholder file keeps `tests/` in the repo until real tests exist.
+- *Import path:* notebooks run from `notebooks/`, where Python cannot see `src/` yet. This is why the import method is a pending decision for Phase 2.
+**Validation/results:** Both files exist with 0 bytes (`ls -la`, `wc -c`). `git status --short --untracked-files=all` showed only `DECISIONS.md` (modified), `PROGRESS.md` (modified), `src/__init__.py` (new) and `tests/.gitkeep` (new). No packages were installed. Not tested: importing from `src/` (nothing to import yet).
+**My explanation (student to fill in):**
+**What I'm still unsure about (student to fill in):**
+**Recall question:** Why does an empty folder need a placeholder file to be shared through Git?
+**Next proposed step:** Not started. Step 1.6 in `PROGRESS.md`: leakage review of every feature other than `duration`.
+
+---
+
 <!-- Copy this block after each completed step. -->
 ## Entry N — [Step title]
 **Date:** YYYY-MM-DD

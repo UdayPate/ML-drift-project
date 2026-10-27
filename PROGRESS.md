@@ -9,8 +9,8 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done (student-approved)
 
 ## Phase 0 — Project setup
 - [x] 0.1 Write the agent rules and logs (`AGENTS.md`, `CLAUDE.md`, `PROGRESS.md`, `DECISIONS.md`, `LEARNING_LOG.md`)
-- [ ] 0.2 Create the folder layout, `requirements.txt`, and `.gitignore` (student creates the Git repository and makes the first commit)
-- [ ] 0.3 Set up a Python virtual environment and confirm the packages install and import
+- [x] 0.2 Create the folder layout, `requirements.txt`, and `.gitignore` (student creates the Git repository and makes the first commit)
+- [x] 0.3 Set up a Python virtual environment and confirm the packages install and import
 
 ## Phase 1 — Data understanding and EDA (Exploratory Data Analysis)
 - [ ] 1.1 Download `bank-additional-full.csv` from UCI; load it and verify row count, columns, and target counts against the UCI documentation

@@ -33,3 +33,5 @@ Open questions. Do not treat any of these as decided. When one is resolved, dele
 - Which 2–3 models to shortlist after the initial comparison
 - Number of random seeds and the statistical test used to compare strategies
 - Whether reconstructed year-month labels may be used for EDA/labelling (windows stay row-index based)
+- How notebooks import code from `src/` (`sys.path` line, `PYTHONPATH`, or editable install)
+- Whether to add `pytest` to `requirements.txt` when introducing tests
