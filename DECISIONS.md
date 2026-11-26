@@ -42,3 +42,19 @@ Open questions. Do not treat any of these as decided. When one is resolved, dele
 - Whether reconstructed year-month labels may be used for EDA/labelling (windows stay row-index based)
 - Whether campaign, contact, month and day_of_week were known before the modeled call (is a row one call or a whole campaign? planned vs. actual values)
 - When each economic indicator's value was publicly available relative to call dates (documentation gives measurement frequency only, no publication dates or delays)
+- Which rows the synthetic scenarios (stationary, sudden, gradual) sample from, which feature is shifted, and how strongly
+
+### Proposed defaults currently in use (NOT confirmed; pending team approval)
+Proposed on 2026-11-25 so the team can build in parallel before the final deadline. They live in `src/settings.py`; if the team changes one, change it there and move the confirmed value to the log above.
+
+| Pending item | Proposed default | Setting in `src/settings.py` | Evidence so far |
+|---|---|---|---|
+| Window size | 8 windows of ~1,030 rows (stream of 8,238 rows) | `N_STREAM_WINDOWS = 8` | Each real stream window has 75 to 558 "yes" rows (notebook 04 check) |
+| Label delay | 1 window | `LABEL_DELAY_WINDOWS = 1` | Simplest realistic delay; not yet tested |
+| Periodic interval | every 2 windows | `PERIODIC_EVERY_WINDOWS = 2` | Gives 3 to 4 retrains over 8 windows |
+| Drift-trigger rule | retrain when any model-input feature (`customer_history` group) has PSI > 0.25; KS reported but not used to trigger; economic indicators monitored and logged separately | `PSI_ALERT`, `TRIGGER_GROUPS`, `MONITOR_GROUPS` | No-change false-alarm rate 0.0 over 200 training-row samples, largest no-change PSI 0.026 (notebook 04, section 1) |
+| Seeds | 3 seeds: 42, 43, 44 | `SEEDS` | Synthetic results identical in alert timing across the 3 seeds (notebook 04) |
+| Synthetic scenario rows | random 20% of training rows (fixed SEED) held out as the sampling pool; the other 80% fit the initial model | `SYNTHETIC_POOL_FRAC = 0.2` | Pool rows never overlap fitting rows (tests/test_scenarios.py) |
+| Shift | tilt `age` upward with strength 1.0; sudden at window 5; gradual from window 3 to full at window 7 | `SHIFT_FEATURE`, `SHIFT_STRENGTH`, `SUDDEN_CHANGE_WINDOW`, `GRADUAL_*` | Age PSI about 1.0 after the change; yes rate stays about 4 to 5% (notebook 04) |
+| Threshold, retraining data (expanding/sliding), economic features as model inputs, model shortlist, statistical test | not set here (Person 2 and Person 3 parts) | | |
+
