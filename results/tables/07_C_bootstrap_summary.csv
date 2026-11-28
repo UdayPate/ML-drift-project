@@ -1,0 +1,17 @@
+scenario,model,comparison,mean_difference,ci_low_min,ci_high_max,seeds_with_interval_excluding_zero
+gradual,Linear SVM,drift_triggered minus static,-0.00015905719833080845,-0.006590707161990655,0.008023671145751725,0
+gradual,Linear SVM,periodic minus static,0.0007396086917262121,-0.004129445190628648,0.008823179017491196,0
+gradual,Logistic Regression,drift_triggered minus static,0.0007895544729433599,-0.005549369378501514,0.007887995558655079,0
+gradual,Logistic Regression,periodic minus static,0.0017482356165452126,-0.0031037031416596824,0.008642830974374325,0
+real_replay,Linear SVM,drift_triggered minus static,0.03758724224042602,0.024884000982373655,0.05064926317010596,3
+real_replay,Linear SVM,periodic minus static,0.039290796431073166,0.02656658817378475,0.052245452779428034,3
+real_replay,Logistic Regression,drift_triggered minus static,0.00126331847291564,-0.007277482108375915,0.010220483194262364,0
+real_replay,Logistic Regression,periodic minus static,0.001593974608172153,-0.006589920082339607,0.010756670439490525,0
+stationary,Linear SVM,drift_triggered minus static,0.0,0.0,0.0,0
+stationary,Linear SVM,periodic minus static,0.000899477167379475,-0.003414749842405636,0.006279911291153272,0
+stationary,Logistic Regression,drift_triggered minus static,0.0,0.0,0.0,0
+stationary,Logistic Regression,periodic minus static,0.0009725556789760469,-0.0028101643103032085,0.0061013788796413886,0
+sudden,Linear SVM,drift_triggered minus static,0.000378076165171494,-0.004156362233480012,0.0068663316166599625,0
+sudden,Linear SVM,periodic minus static,2.7843703746053817e-05,-0.004641999336940039,0.00733966134659313,0
+sudden,Logistic Regression,drift_triggered minus static,0.0005569093302621666,-0.004050269160392893,0.00787284548117167,0
+sudden,Logistic Regression,periodic minus static,0.0003085044159590672,-0.004150117318244883,0.00792893267839337,0

@@ -259,6 +259,51 @@ After each completed step, the coding agent fills in the factual fields. I fill 
 
 ---
 
+## Entry 12 — Fixing row reuse in the synthetic scenarios (design 1B) and the v2 re-run (awaiting student review)
+**Date:** 2026-11-27
+**Step:** Person 4's validity fix before results analysis (not a `PROGRESS.md` step; nothing ticked). Approved by the student after a written proposal. It changes teammate-owned files: `src/scenarios.py` (Rutuja), `src/strategies.py` (Himja), `tests/test_scenarios.py` (Rutuja); tell them.
+**What was built:** `src/scenarios.py`: `synthetic_split` (three disjoint parts of the training rows: 60% fit, 20% scoring pool, 20% history pool) replaces `synthetic_train_and_pool`; `Scenario.labelled_windows` holds the rows a retrain may learn from. `src/strategies.py`: `labelled_history` reads `labelled_windows` when present (real replay has none). `tests/test_synthetic_no_reuse.py` (new, 4 tests) and rewritten pool tests in `tests/test_scenarios.py`. `notebooks/06b_experiment_v2.ipynb` and `results/results_v2.csv`. `results/results.csv` and notebook 06 are unchanged.
+**Concept behind it (tutor notes):**
+- *The problem:* v1 drew every window with replacement from one pool of about 4,900 rows, and retraining learned from earlier windows drawn from that same pool. A retrained model was therefore partly scored on rows it had already seen with labels, which favours the strategies that retrain.
+- *Why simply making windows disjoint fails:* if every pool row is used once, the age mix averaged over all eight windows must equal the pool's mix, so "four normal windows then four older windows" cannot both hold. In a simulation the shift decayed (age PSI 0.77, 0.33, 0.18, 0.40 in windows 5 to 8 for a 40% pool).
+- *Design 1B:* the windows the models are scored on come from a scoring pool; the labels a retrain later uses for that window come from an independent draw (same shift weights) from a separate history pool. A scored row can never be training data. This is a simulation assumption: the labels that arrive are a fresh sample of the window's distribution, not the same customers. The synthetic scenarios are controlled experiments, not chronological replays.
+- *YES rate is a diagnostic, not a pass/fail:* the age shift can legitimately change the share of "yes". Observed rates in 72 windows range from 2.8% to 6.2%. Compared with the rate implied by the sampling design (4.4% to 4.8%), only 2 windows lie more than 2 binomial SDs away (z = 2.3 and -2.5, the 6.2% and 2.8% windows), and none more than 3; about 3 are expected by chance alone at that cut-off. So the spread is consistent with sampling noise.
+**Validation/results:**
+- 65 of 65 unit tests pass (60 before; the new file checks, for all 3 seeds x 3 synthetic scenarios, that no scored row is in any history and that no `fit_model` call in the real strategy loop saw one; a negative control confirms the check detects the old design).
+- Age PSI (all 9 scenario-seed combinations): stationary and pre-change windows 0.00 to 0.02; sudden windows 5 to 8: 0.83 to 1.07; gradual: 0.04 to 0.06 at the start, rising to 0.88 to 1.05 by windows 7 to 8 and at or above 0.25 from window 5. Detection delay unchanged: 0 windows (sudden) and 2 windows (gradual); 0 false alarms.
+- Real replay: all 36 non-timing columns identical in all 144 rows (largest numeric difference 0.0). Timing columns differ because v1 was timed on another machine; v1 and v2 timings are reported side by side in the notebook, never combined.
+- v1 vs v2, mean PR-AUC gain over static, Logistic Regression: periodic sudden +0.0054 to +0.0003, gradual +0.0040 to +0.0017, stationary +0.0020 to +0.0010; drift-triggered sudden +0.0062 to +0.0006, gradual +0.0042 to +0.0008, stationary 0 to 0. Linear SVM is similar. Most of v1's apparent retraining gain in the synthetic scenarios disappears. This is consistent with the row reuse having inflated it, but v2 also fits the initial model on 60% instead of 80% of the training rows and uses different draws, so v1 and v2 are not a one-factor comparison. All synthetic PR-AUCs remain close to the random line (about 0.045).
+**Out of date after this change (not edited):** `notebooks/06_experiment.ipynb` (re-running it would write v2-style synthetic rows into `results.csv`), `STRATEGIES_EXPERIMENT_SUMMARY.md` (synthetic numbers are v1), `DRIFT_SCENARIOS_SUMMARY.md` and `notebooks/04_drift_and_scenarios.ipynb` (describe the 80/20 pool), `EXPERIMENT_DESIGN.md` (lists the synthetic rows as undecided).
+**My explanation (student to fill in):**
+**What I'm still unsure about (student to fill in):**
+**Recall question:** Why could "make every window use different rows" not keep a strong age shift going through four consecutive windows, and what does the separate history pool do instead?
+**Next proposed step:** Team review of v2; results analysis in `07_results.ipynb` using `results.csv` (real replay) and `results_v2.csv` (synthetic scenarios, v1 only as a flagged sensitivity).
+
+---
+
+## Entry 13 — Results analysis: why the three strategies performed alike, plus two diagnostics (awaiting student review)
+**Date:** 2026-11-27
+**Step:** Person 4's results analysis (work-plan "Results analysis"; not a `PROGRESS.md` step, nothing ticked). One teammate-owned file touched: `src/strategies.py` (Himja), only an optional `scores_out=None` argument on `run_strategy` that records per-row scores and changes nothing else (default behaviour and results are identical; tested). Tell Himja.
+**What was built:** `notebooks/07_results.ipynb` (Part A core analysis from `results_v2.csv`; per-row scores from a re-run of the existing loop; Part B oracle-ceiling diagnostic; Part C paired-bootstrap diagnostic; Part D error analysis); figures `14_` to `23_`; 12 tables `results/tables/07_*.csv`; `RESULTS_SUMMARY.md`; `tests/test_scores_out.py` (2 tests).
+**Concept behind it (tutor notes):**
+- *Lift:* PR-AUC minus the window's random line (its share of "yes"). Raw PR-AUC rises in the real replay mainly because the share of "yes" rises from 7% to 54%; lift removes that.
+- *Why retraining changed little:* a retrain refits on an expanding history, and after six retrains only about 20% of the training rows come from the stream, while the old rows have 4.8% "yes" vs 7% to 54% in the stream. The drift alarm fires in all 8 real windows, so "drift-triggered" became "retrain whenever labels arrive" (6 retrains vs periodic's 3).
+- *Oracle ceiling (diagnostic):* cross-validation inside a window uses that window's own labels, which a deployment would not have yet. It shows how much a model could gain from the newest data at this small sample size. It is never used to choose a setting.
+- *Paired bootstrap:* resample the rows within each window (the same resample for all strategies), recompute the mean PR-AUC difference 2,000 times, and read the middle 95%. It reflects which customers are in each window, not training randomness; our models are deterministic and the 3 seeds are not independent replications.
+**Validation/results:**
+- Per-row scores from a re-run reproduce `results_v2.csv` exactly (8,064 metric values compared, 0 differ; all non-timing columns identical). The fast bootstrap PR-AUC matches scikit-learn to 1.1e-16 (limit 0.001).
+- Real replay, Logistic Regression: mean PR-AUC 0.3989 / 0.4005 / 0.4001 (static / periodic / drift) vs 0.3083 random; periodic minus static +0.0016 with a 95% interval of -0.007 to +0.011. Linear SVM: 0.3606 / 0.3998 / 0.3981; periodic minus static +0.039 (95% interval +0.027 to +0.052).
+- Synthetic scenarios: all strategies within about 0.002 of each other and every bootstrap interval includes zero. Alerts are correct (delay 0 windows sudden, 2 gradual, 0 false alarms) but the static model's lift does not drop after the change.
+- Oracle ceiling (mean over 8 windows, same held-out rows): Logistic Regression 0.407 vs static 0.417; Linear SVM 0.405 vs static 0.377 vs retrained 0.417.
+- Error analysis (static Logistic Regression): recall 0.588; 1,043 of the 1,047 missed subscribers had no successful previous campaign.
+- Full test suite and checksums of `results.csv` and `results_v2.csv` unchanged: see the end-of-step report.
+**My explanation (student to fill in):**
+**What I'm still unsure about (student to fill in):**
+**Recall question:** Why does a rising share of "yes" make raw PR-AUC rise even when a model's ranking quality does not change, and which chart shows this?
+**Next proposed step:** Team review of `RESULTS_SUMMARY.md`; write the report's results and discussion sections from it, state the limitations in section 9, and list sliding windows and a selective drift rule as future work.
+
+---
+
 <!-- Copy this block after each completed step. -->
 
 ## Entry N — [Step title]

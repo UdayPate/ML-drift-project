@@ -109,7 +109,10 @@ def labelled_history(scenario, window_index, label_delay=LABEL_DELAY_WINDOWS, re
     """Rows a model may be (re)trained on just before window `window_index`: oldest first."""
     if retrain_data != 'expanding':
         raise NotImplementedError(f"Only 'expanding' retraining data is implemented, got {retrain_data!r}")
-    labelled = scenario.windows[:n_labelled_windows(window_index, label_delay)]
+    # Synthetic scenarios carry separate labelled copies of each window (never the scored rows themselves);
+    # the real replay has none, so its scored windows are its labelled windows.
+    source = scenario.windows if scenario.labelled_windows is None else scenario.labelled_windows
+    labelled = source[:n_labelled_windows(window_index, label_delay)]
     return pd.concat([scenario.initial_train, *labelled])
 
 
@@ -128,11 +131,16 @@ def should_retrain(strategy, window_index, drift_decision, periodic_every=PERIOD
 # The shared loop
 # ---------------------------------------------------------------------------------------------------------
 def run_strategy(scenario, strategy, model_name, seed=SEED, label_delay=LABEL_DELAY_WINDOWS,
-                 periodic_every=PERIODIC_EVERY_WINDOWS, initial_fit=None, feature_set=EXPERIMENT_FEATURE_SET):
+                 periodic_every=PERIODIC_EVERY_WINDOWS, initial_fit=None, feature_set=EXPERIMENT_FEATURE_SET,
+                 scores_out=None):
     """Run one strategy on one scenario with one model and seed. Returns one row per window (a DataFrame).
 
     `initial_fit` lets a caller pass an already fitted (pipeline, threshold, info) for the initial model, so the
     three strategies on the same scenario/model/seed start from the IDENTICAL model (and it is fitted once).
+
+    `scores_out` (optional, default None = nothing recorded, results unchanged): pass an empty list and, for every
+    window, a dict with the strategy, 1-based window, the window's row ids, true labels, scores and the threshold
+    used is appended to it. Used only for diagnostics that need per-row scores (bootstrap, error analysis).
     """
     features = FEATURE_SETS[feature_set]
     if initial_fit is None:
@@ -172,6 +180,9 @@ def run_strategy(scenario, strategy, model_name, seed=SEED, label_delay=LABEL_DE
         if len(set(y)) < 2:   # never happens on our streams (every window has dozens of "yes" rows)
             raise ValueError(f'{scenario.name} window {i + 1} has only one class; PR-AUC is undefined')
         metrics = evaluate_binary(y, scores, threshold=threshold)
+        if scores_out is not None:
+            scores_out.append({'strategy': strategy, 'window': i + 1, 'index': window.index.to_numpy(),
+                               'y': y, 'scores': scores, 'threshold': float(threshold)})
 
         rows.append({
             'scenario': scenario.name, 'scenario_kind': scenario.kind, 'strategy': strategy,

@@ -1,0 +1,15 @@
+scenario,model,strategy,windows_after_first_retrain_per_run,mean_pr_auc_gain_over_static,windows_better_than_static_per_run
+real_replay,Linear SVM,drift_triggered,6.0,0.050116322987234695,6.0
+real_replay,Linear SVM,periodic,6.0,0.052387728574764224,6.0
+real_replay,Logistic Regression,drift_triggered,6.0,0.0016844246305541867,4.0
+real_replay,Logistic Regression,periodic,6.0,0.0021252994775628705,4.0
+stationary,Linear SVM,periodic,6.0,0.0011993028898392999,3.3333333333333335
+stationary,Logistic Regression,periodic,6.0,0.001296740905301396,4.0
+sudden,Linear SVM,drift_triggered,4.0,0.000756152330342988,1.6666666666666667
+sudden,Linear SVM,periodic,6.0,3.712493832807171e-05,2.6666666666666665
+sudden,Logistic Regression,drift_triggered,4.0,0.0011138186605243333,1.6666666666666667
+sudden,Logistic Regression,periodic,6.0,0.00041133922127875626,2.6666666666666665
+gradual,Linear SVM,drift_triggered,4.0,-0.0003181143966616169,2.0
+gradual,Linear SVM,periodic,6.0,0.0009861449223016162,3.3333333333333335
+gradual,Logistic Regression,drift_triggered,4.0,0.0015791089458867197,2.3333333333333335
+gradual,Logistic Regression,periodic,6.0,0.002330980822060284,3.6666666666666665
