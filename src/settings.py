@@ -47,6 +47,52 @@ BASELINE_FEATURES = CUSTOMER_FEATURES + HISTORY_FEATURES
 CURRENT_CONTACT_FEATURES = ['campaign', 'contact', 'month', 'day_of_week']
 ECONOMIC_FEATURES = ['emp.var.rate', 'cons.price.idx', 'cons.conf.idx', 'euribor3m', 'nr.employed']
 
+# ------------------------------------------------------------------------------------------------------
+# Stream, drift-monitoring and scenario settings.
+# PROPOSED on 2026-11-25 as starting defaults so the team can build in parallel. They are NOT confirmed
+# decisions yet (see "Pending decisions" in DECISIONS.md). If the team changes one, change it here only;
+# every module and notebook reads these values from this file.
+# ------------------------------------------------------------------------------------------------------
+
+# Random seeds for repeated runs (PROPOSED: 3 seeds). SEED above stays the default for single runs.
+SEEDS = [42, 43, 44]
+
+# The stream (last 20% = 8,238 rows) is cut into this many consecutive windows of ~1,030 rows each,
+# by row index only (no invented dates). PROPOSED.
+N_STREAM_WINDOWS = 8
+
+# How many windows pass before a window's true labels count as available for retraining. PROPOSED.
+LABEL_DELAY_WINDOWS = 1
+
+# Periodic strategy: retrain every this many windows. PROPOSED.
+PERIODIC_EVERY_WINDOWS = 2
+
+# --- Drift monitoring (src/drift.py) ---
+# Feature groups are monitored separately (AGENTS.md: economic indicators apart from customer attributes).
+MONITOR_GROUPS = {
+    'customer_history': CUSTOMER_FEATURES + HISTORY_FEATURES,   # the 10 baseline model inputs
+    'economic': ECONOMIC_FEATURES,
+}
+# Groups whose alerts can trigger a retrain. PROPOSED: only the features the model actually uses.
+# If the team decides to add economic indicators as model features, add 'economic' here too.
+TRIGGER_GROUPS = ['customer_history']
+
+PSI_BINS = 10            # quantile bins for numeric features with more than PSI_BINS distinct values
+PSI_EPS = 1e-4           # floor for empty bins, the same floor used in notebooks/01_EDA.ipynb
+PSI_ALERT = 0.25         # PROPOSED trigger: retrain when any trigger-group feature has PSI above this
+                         # (the common "major shift" rule of thumb, also used in the EDA)
+
+# --- Synthetic scenarios (src/scenarios.py) ---
+# Scenarios 2-4 sample observed (features, label) rows from a held-out part of the TRAINING rows, so their
+# stream starts from the same distribution the initial model was trained on and never reuses its rows.
+SYNTHETIC_POOL_FRAC = 0.2           # share of training rows held out as the sampling pool (PROPOSED)
+SYNTHETIC_WINDOW_ROWS = 1_030       # same size as a real stream window
+SHIFT_FEATURE = 'age'               # feature whose distribution is shifted (a model input) (PROPOSED)
+SHIFT_STRENGTH = 1.0                # tilt per standard deviation of SHIFT_FEATURE (PROPOSED)
+SUDDEN_CHANGE_WINDOW = 4            # 0-based: windows 4..7 are shifted (the 5th window onwards)
+GRADUAL_START_WINDOW = 2            # 0-based: the shift grows from window 2 ...
+GRADUAL_END_WINDOW = 6              # ... and reaches full strength at window 6
+
 # pdays = 999 is a sentinel, not a number of days. The UCI documentation says it means "not previously
 # contacted", but 4,110 rows have previous > 0 together with pdays = 999, so we do not assume it always
 # means that. Those rows are kept. (Of them, 124 fall in the training rows and 1,977 in the development

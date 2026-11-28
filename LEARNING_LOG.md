@@ -220,6 +220,28 @@ After each completed step, the coding agent fills in the factual fields. I fill 
 
 ---
 
+## Entry 10 — Drift detection (KS, PSI, trigger rule) and the four scenarios (awaiting student review)
+**Date:** 2026-11-25
+**Step:** Person 1's part of the final work plan: `PROGRESS.md` steps 4.1 to 4.4 and 5.1 to 5.5 (not ticked; the student ticks after review). No model was trained; no shared setting that was already confirmed was changed. New settings are marked PROPOSED in `src/settings.py` and listed under "Proposed defaults currently in use" in `DECISIONS.md`.
+**What was built:** `src/drift.py` (PSI, KS, per-window drift report by feature group, the proposed trigger rule, a no-change PSI distribution for checking the threshold); `src/scenarios.py` (real replay, stationary, sudden and gradual covariate shift, all returning the same `Scenario` object); `tests/test_drift.py` (14 tests) and `tests/test_scenarios.py` (9 tests); `notebooks/04_drift_and_scenarios.ipynb`; figures `10_null_psi_calibration.png`, `11_scenario_drift_alarm.png`, `12_real_replay_drift_by_group.png`; `DRIFT_SCENARIOS_SUMMARY.md` (method note for the report).
+**Concept behind it (tutor notes):**
+- *PSI* compares the share of rows per bin in a reference sample and a new window. Bins come from the reference only. Few-valued numbers and text are binned by value. Empty bins get a 1e-4 floor, so PSI depends on binning and floor.
+- *Checking a threshold without the stream:* sampling windows from the training rows themselves shows what PSI looks like when nothing changed; the share above 0.25 is the per-window false-alarm rate.
+- *Covariate shift by resampling:* whole observed rows are drawn with weights exp(strength × standardised age), so the age mix changes but each row keeps its real label.
+- *Alert ≠ worse predictions:* the synthetic age shift moves age PSI to about 1.0 while the yes rate stays about 4 to 5%.
+**Validation/results:**
+- 40 of 40 unit tests pass (17 existing + 23 new). Notebook 04 executed top to bottom from a fresh kernel with no errors.
+- No-change check (200 samples of 1,030 training rows): largest PSI 0.026; false-alarm rate of PSI > 0.25 = 0.0.
+- Stationary scenario: 0 alerts in 3 seeds × 8 windows. Sudden: first alert in the first shifted window (delay 0) for all 3 seeds. Gradual: first alert 2 windows after the shift starts for all 3 seeds. No alerts before any change point.
+- Real replay against the training rows: the trigger fires in 8 of 8 windows, driven mainly by `previous` and `poutcome` (PSI 1.1 to 4.0) and later `pdays`, `job`, `age`, `default`. Development windows show the same pattern. Economic indicators have PSI about 9 to 18 (inflated by the empty-bin floor) but do not trigger, by design.
+**Limits:** all thresholds and window settings are proposals. PSI values for few-valued economic indicators should not be compared in size. KS p-values are near zero for almost any difference at this sample size. Synthetic scenarios are controlled experiments, not historical evidence. Whether alerts line up with performance drops can only be checked in the strategy experiment.
+**My explanation (student to fill in):**
+**What I'm still unsure about (student to fill in):**
+**Recall question:** Why can a drift alert fire while the model's predictions stay just as good, and which scenario in notebook 04 shows this?
+**Next proposed step:** Team review of the proposed defaults; Person 3 imports `drift_trigger` and `all_scenarios` into the strategy loop.
+
+---
+
 <!-- Copy this block after each completed step. -->
 
 ## Entry N — [Step title]
