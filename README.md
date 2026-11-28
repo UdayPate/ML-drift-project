@@ -10,6 +10,12 @@ Project rules and step order: see `AGENTS.md`, `PROGRESS.md`, and `DECISIONS.md`
 3. Copy **`bank-additional-full.csv`** (41,188 rows) into `data/raw/`.
    Do not use `bank-full.csv` (older version, no economic features) or `bank-additional.csv` (10% sample).
 4. Load with `pd.read_csv("../data/raw/bank-additional-full.csv", sep=";")` — the file is semicolon-separated.
+5. Do not open the file in Excel (it can change the file).
+6. Verify the file (expected: 41,188 rows, 4,640 yes):
+   - Mac / Linux / WSL: `sha256sum data/raw/bank-additional-full.csv`
+   - Windows PowerShell: `Get-FileHash data\raw\bank-additional-full.csv -Algorithm SHA256`
+
+   Expected SHA-256: `74adfc578bf77a7ff4bb1ba4a9f8709d9e3c6907342959c2c8416847e0afb4d8`
 
 ## Set up the Python environment (WSL / Linux)
 The virtual environment lives on the WSL Linux filesystem, **outside** the repository (faster than `/mnt/c`, and never committed).

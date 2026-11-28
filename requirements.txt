@@ -14,3 +14,6 @@ ipykernel==7.4.0
 
 # --- Project code dependencies (imported by src/); installed and checked with `pip check` on 2026-10-27 ---
 scikit-learn==1.9.1
+
+# --- Test runner (installed in ~/venvs/ml-drift; the suite itself uses standard-library unittest) ---
+pytest==9.2.0
