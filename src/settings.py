@@ -98,3 +98,27 @@ GRADUAL_END_WINDOW = 6              # ... and reaches full strength at window 6
 # means that. Those rows are kept. (Of them, 124 fall in the training rows and 1,977 in the development
 # rows, so the pattern is mostly in later data.)
 PDAYS_SENTINEL = 999
+
+# ------------------------------------------------------------------------------------------------------
+# Retraining-strategy experiment (src/strategies.py, Person 3).
+# PROPOSED on 2026-11-26, NOT confirmed decisions (see "Pending decisions" in DECISIONS.md).
+# ------------------------------------------------------------------------------------------------------
+
+# The three strategies, in the order used in tables and plots.
+STRATEGIES = ['static', 'periodic', 'drift_triggered']
+
+# Models used in the stream experiment: Person 2's provisional shortlist (notebooks/05_models.ipynb), each with
+# the index of its selected configuration in src.model_comparison.model_candidates(). Hyperparameters stay
+# fixed during the stream; only the model weights and the decision threshold are refitted at a retrain.
+EXPERIMENT_MODELS = {'Logistic Regression': 1, 'Linear SVM': 1}   # both class_weight='balanced' (verified 2026-11-26 by re-running Person 2's selection)
+EXPERIMENT_FEATURE_SET = 'baseline_10'     # Person 2: economic indicators made every model worse on dev
+
+# Retraining data: 'expanding' = every labelled row available so far (initial training rows plus the stream
+# windows whose labels have arrived). PROPOSED default from the work plan.
+RETRAIN_DATA = 'expanding'
+
+# Decision threshold rule, used for the initial fit AND at every retrain, in every scenario and strategy:
+# hold out the most recent THRESHOLD_TUNE_ROWS labelled rows, fit on the rest, pick the cut-off with the best
+# F1 on the held-out rows, then refit on all labelled rows and keep that cut-off. PROPOSED.
+THRESHOLD_TUNE_ROWS = 1_030              # one window's worth of rows
+THRESHOLD_MIN_POSITIVES = 10             # fewer "yes" rows than this in the held-out rows: keep the old cut-off

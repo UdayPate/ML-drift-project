@@ -242,6 +242,23 @@ After each completed step, the coding agent fills in the factual fields. I fill 
 
 ---
 
+## Entry 11 — Retraining strategies and the full experiment loop (awaiting student review)
+**Date:** 2026-11-26
+**Step:** Person 3's part of the final work plan: `PROGRESS.md` steps 6.1 to 6.5 (not ticked; the student ticks after review). New settings are marked PROPOSED in `src/settings.py` and listed in `DECISIONS.md`.
+**What was built:** `src/strategies.py` (static, periodic and drift-triggered strategies in one shared loop, `run_experiment` for the full grid, a quick `summarise` table); `tests/test_strategies.py` (17 tests on small fake streams); `notebooks/06_experiment.ipynb` (runs 4 scenarios × 3 strategies × 2 models × 3 seeds, sanity checks, saves `results/results.csv`, check chart `figures/13_strategies_pr_auc_check.png`); `STRATEGIES_EXPERIMENT_SUMMARY.md` (method note and column guide for Person 4); a PROPOSED settings block in `src/settings.py`.
+**Concept behind it (tutor notes):**
+- *Fair comparison:* the strategies differ only in `should_retrain()`. Same stream, model, features, seed, label delay, retraining data, threshold rule and initial model.
+- *Label delay:* with a delay of 1, before window i only windows up to i-2 are labelled. Features of the current window may be used for monitoring (known before the call), its labels may not.
+- *Threshold re-tuning:* hold out the newest labelled rows, choose the best-F1 cut-off there, then refit on everything. A fixed 0.5 gave zero "yes" predictions in the baseline.
+- *Expanding reference keeps the alarm on:* after a lasting shift the reference is still mostly old rows, so the drift rule keeps firing.
+**Validation/results:** 60 of 60 tests pass on the real file (17 new). Person 2's selected configurations re-checked by re-running `train_comparison`: index 1 for both models (dev PR-AUC 0.1786 and 0.1619, matching notebook 05). Notebook 06 executed top to bottom on the real data in about 3 minutes; all sanity checks passed; 576 rows in `results/results.csv`. Real replay mean PR-AUC: LR 0.399 / 0.400 / 0.400 (static / periodic / drift) vs. 0.308 random; SVM 0.361 / 0.400 / 0.398. Stationary: 0 drift alerts. Sudden and gradual: retraining beats static slightly (about 0.068 vs. 0.063) but all synthetic PR-AUCs are close to random (about 0.04). Full table in `STRATEGIES_EXPERIMENT_SUMMARY.md`.
+**My explanation (student to fill in):**
+**What I'm still unsure about (student to fill in):**
+**Recall question:** Why is it allowed to use window i's features to decide whether to retrain, but not window i's labels?
+**Next proposed step:** Team review of the proposed settings; Person 4 analyses `results/results.csv` in `07_results.ipynb` (statistical test across seeds, alerts vs. performance drops).
+
+---
+
 <!-- Copy this block after each completed step. -->
 
 ## Entry N — [Step title]
