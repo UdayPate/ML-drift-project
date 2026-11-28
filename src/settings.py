@@ -85,7 +85,8 @@ PSI_ALERT = 0.25         # PROPOSED trigger: retrain when any trigger-group feat
 # --- Synthetic scenarios (src/scenarios.py) ---
 # Scenarios 2-4 sample observed (features, label) rows from a held-out part of the TRAINING rows, so their
 # stream starts from the same distribution the initial model was trained on and never reuses its rows.
-SYNTHETIC_POOL_FRAC = 0.2           # share of training rows held out as the sampling pool (PROPOSED)
+SYNTHETIC_POOL_FRAC = 0.2           # share of training rows in EACH of two held-out pools: scoring pool and history
+                                    # pool; the other 60% fit the initial model (design 1B, 2026-11-27)
 SYNTHETIC_WINDOW_ROWS = 1_030       # same size as a real stream window
 SHIFT_FEATURE = 'age'               # feature whose distribution is shifted (a model input) (PROPOSED)
 SHIFT_STRENGTH = 1.0                # tilt per standard deviation of SHIFT_FEATURE (PROPOSED)

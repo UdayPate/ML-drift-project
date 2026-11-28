@@ -17,11 +17,16 @@ Every scenario is returned as a `Scenario` with the same fields, so the strategy
 4. gradual       SYNTHETIC. The same shift, growing step by step from GRADUAL_START_WINDOW to GRADUAL_END_WINDOW.
 
 How the synthetic scenarios are built (documented resampling of observed rows, AGENTS.md):
-- The training rows are split once, at random with the fixed project SEED, into a fitting part
-  (`initial_train`, 80%) and a held-out pool (20%, SYNTHETIC_POOL_FRAC). Pool rows are never used for fitting,
-  so evaluation never reuses training records.
-- Each window is a random sample (with replacement) of whole pool rows: a row's features and its label always
-  stay together. No values are invented.
+- The training rows are split once, at random with the fixed project SEED, into THREE disjoint parts
+  (`synthetic_split`): a fitting part (`initial_train`, 60%), a scoring pool (20%, SYNTHETIC_POOL_FRAC) and a
+  history pool (20%). Each window the models are SCORED on is a random sample (with replacement) of whole
+  scoring-pool rows. The rows a retrain may LEARN from for that window (`Scenario.labelled_windows`) are a
+  second, independent sample drawn the same way, with the same shift weights, from the history pool.
+  So a scored row is never in any model's training data (the earlier design drew both from one small pool,
+  and by window 8 most scored rows had already been used for retraining).
+- Simulation assumption (document it in the report): the labels that arrive for window i come from a fresh
+  sample of window i's distribution, not from the same customers that were scored.
+- A row's features and its label always stay together. No values are invented.
 - A covariate shift is made by sampling rows with unequal weights:
       weight = exp(strength * z),   z = (SHIFT_FEATURE - pool mean) / pool std
   With strength > 0, rows with a higher SHIFT_FEATURE value (older customers, for `age`) are drawn more often.
@@ -49,6 +54,8 @@ class Scenario:
     change_window: int = None       # 0-based index of the first shifted window; None = unknown / no change
     description: str = ''
     strengths: list = field(default_factory=list)   # shift strength used for each window (synthetic only)
+    labelled_windows: list = None   # rows whose labels arrive for each window (retraining data);
+                                    # None = the scored windows themselves (real replay)
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -60,12 +67,20 @@ def split_into_windows(rows, n_windows=N_STREAM_WINDOWS):
     return [rows.iloc[edges[i]:edges[i + 1]].copy() for i in range(n_windows)]
 
 
-def synthetic_train_and_pool(train_rows, pool_frac=SYNTHETIC_POOL_FRAC, seed=SEED):
-    """Split training rows at random into (fitting part, held-out pool). Fixed seed: same split every time."""
-    rng = np.random.default_rng(seed)
-    in_pool = np.zeros(len(train_rows), dtype=bool)
-    in_pool[rng.choice(len(train_rows), size=int(round(len(train_rows) * pool_frac)), replace=False)] = True
-    return train_rows.iloc[~in_pool].copy(), train_rows.iloc[in_pool].copy()
+def synthetic_split(train_rows, pool_frac=SYNTHETIC_POOL_FRAC, seed=SEED):
+    """Split training rows at random into three DISJOINT parts: (fit, scoring_pool, history_pool).
+
+    Each part keeps the original row order (the cut-off tuning uses "the most recent rows"). Fixed seed: the
+    same split every time. With the default 0.2: 14,828 fitting rows and two pools of 4,942 rows.
+    """
+    if not 0 < 2 * pool_frac < 1:
+        raise ValueError('two pools must leave some rows for fitting')
+    order = np.random.default_rng(seed).permutation(len(train_rows))
+    n_pool = int(round(len(train_rows) * pool_frac))
+    scoring = np.sort(order[:n_pool])
+    history = np.sort(order[n_pool:2 * n_pool])
+    fit = np.sort(order[2 * n_pool:])
+    return train_rows.iloc[fit].copy(), train_rows.iloc[scoring].copy(), train_rows.iloc[history].copy()
 
 
 def shift_weights(pool, strength, feature=SHIFT_FEATURE):
@@ -109,11 +124,15 @@ def real_replay(df, n_windows=N_STREAM_WINDOWS):
 
 def _synthetic(name, df, strengths, change_window, description, seed, window_rows, feature):
     train, _dev, _stream = chronological_split(df)
-    fit_part, pool = synthetic_train_and_pool(train)           # fixed split (project SEED)
-    rng = np.random.default_rng(seed)                           # per-run randomness (one of SEEDS)
-    windows = [sample_window(pool, window_rows, rng, s, feature) for s in strengths]
+    fit_part, scoring_pool, history_pool = synthetic_split(train)     # fixed split (project SEED)
+    # Per-run randomness (one of SEEDS): two independent generators, one for the scored windows and one for
+    # their labelled copies, so the two sets of draws never depend on each other.
+    score_rng, label_rng = (np.random.default_rng(s) for s in np.random.SeedSequence(seed).spawn(2))
+    windows = [sample_window(scoring_pool, window_rows, score_rng, s, feature) for s in strengths]
+    labelled = [sample_window(history_pool, window_rows, label_rng, s, feature) for s in strengths]
     return Scenario(name=name, kind='synthetic', initial_train=fit_part, windows=windows,
-                    change_window=change_window, description=description, strengths=list(strengths))
+                    change_window=change_window, description=description, strengths=list(strengths),
+                    labelled_windows=labelled)
 
 
 def stationary(df, seed=SEED, n_windows=N_STREAM_WINDOWS, window_rows=SYNTHETIC_WINDOW_ROWS):
